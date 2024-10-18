@@ -1,26 +1,25 @@
 pipeline {
     agent any
-
+    environment {
+        DB_HOST = '192.15.10.4'
+        USERNAME = 'user1'
+        PASSWORD = 'passwd122'
+        }
     stages {
-
-
         stage('Setup') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'server-creds', usernameVariable: "myuser", passwordVariable: "mypassword")]) {
-
-                    sh '''
-                    echo ${myuser}
-                    echo ${mypassword}
-                    '''
-                }
-
+                
                 sh "pip install -r requirements.txt"
+                echo "host name : ${DB_HOST}"
+            }
             
             }
         }
         stage('Test') {
             steps {
+                
                 sh "pytest"
+                echo "user is: ${USERNAME}  password : ${PASSWORD}"
                 
             }
         }    
