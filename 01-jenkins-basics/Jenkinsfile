@@ -1,33 +1,47 @@
 pipeline {
     agent any
+
     environment {
-        DB_HOST = '192.15.10.4'
-        USERNAME = 'user1'
-        PASSWORD = 'passwd122'
-        }
+        SERVER_IP = credentials('prod-server-ip')
+    }
     stages {
         stage('Setup') {
             steps {
-                
                 sh "pip install -r requirements.txt"
-                echo "host name : ${DB_HOST}"
             }
-                        }
+        }
         stage('Test') {
             steps {
-                
                 sh "pytest"
-                echo "user is: ${USERNAME}  password : ${PASSWORD}"
-                
             }
-        }    
-        stage('Deployment') {
-            
+        }
+
+        stage('Package code') {
             steps {
-                echo "Running Deployment"
-                
+                sh "zip -r myapp.zip ./* -x '*.git*'"
+                sh "ls -lart"
             }
-        } 
+        }
+
+        stage('Deploy to Prod') {
+            steps {
+                withCredentials([sshUserPrivateKey(credentialsId: 'ssh-key', keyFileVariable: 'MY_SSH_KEY', usernameVariable: 'username')]) {
+                    sh '''
+                    scp -i $MY_SSH_KEY -o StrictHostKeyChecking=no myapp.zip  ${username}@${SERVER_IP}:/home/ec2-user/
+                    ssh -i $MY_SSH_KEY -o StrictHostKeyChecking=no ${username}@${SERVER_IP} << EOF
+                        unzip -o /home/ec2-user/myapp.zip -d /home/ec2-user/app/
+                        source app/venv/bin/activate
+                        cd /home/ec2-user/app/
+                        pip install -r requirements.txt
+                        sudo systemctl restart flaskapp.service
+EOF
+                    '''
+                }
+            }
+        }
+       
         
-    }     
+       
+        
     }
+}
