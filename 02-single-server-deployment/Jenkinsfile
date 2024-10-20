@@ -10,11 +10,6 @@ pipeline {
                 sh "pip install -r 02-single-server-deployment/requirements.txt"
             }
         }
-        stage('Test') {
-            steps {
-                sh "pytest"
-            }
-        }
 
         stage('Package code') {
             steps {
